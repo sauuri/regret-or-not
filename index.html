@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>오늘 내가 한 선택들, 후회할까?</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      background: #0a0a1a;
+      font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      color: #e8e0ff;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 별 배경 */
+    .stars {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .star {
+      position: absolute;
+      border-radius: 50%;
+      background: white;
+      animation: twinkle var(--d, 3s) ease-in-out infinite;
+      opacity: 0;
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: 0; transform: scale(0.8); }
+      50% { opacity: var(--o, 0.6); transform: scale(1); }
+    }
+
+    /* 그라데이션 orb */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .orb-1 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, #3d1a6e44, transparent);
+      top: -100px; right: -100px;
+      animation: float1 8s ease-in-out infinite;
+    }
+    .orb-2 {
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, #1a3d6e44, transparent);
+      bottom: -80px; left: -80px;
+      animation: float2 10s ease-in-out infinite;
+    }
+    @keyframes float1 {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(30px, 30px); }
+    }
+    @keyframes float2 {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(-20px, -20px); }
+    }
+
+    /* 메인 컨테이너 */
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 480px;
+      padding: 20px;
+    }
+
+    /* 인트로 */
+    .intro {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .intro .moon {
+      font-size: 64px;
+      display: block;
+      margin-bottom: 16px;
+      animation: bob 3s ease-in-out infinite;
+    }
+    @keyframes bob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .intro h1 {
+      font-size: 26px;
+      font-weight: 700;
+      line-height: 1.4;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #c8a8ff, #8ab4ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .intro p {
+      font-size: 15px;
+      color: #9988bb;
+      line-height: 1.7;
+      margin-bottom: 32px;
+    }
+    .intro p span {
+      color: #c8a8ff;
+      font-weight: 600;
+    }
+    .start-btn {
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      color: white;
+      border: none;
+      padding: 16px 48px;
+      border-radius: 50px;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 8px 32px #7c3aed55;
+    }
+    .start-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px #7c3aed88;
+    }
+    .start-btn:active { transform: translateY(0); }
+
+    /* 퀴즈 화면 */
+    .quiz {
+      display: none;
+    }
+    .quiz.active { display: block; }
+
+    .progress-wrap {
+      margin-bottom: 24px;
+    }
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .progress-label {
+      font-size: 13px;
+      color: #7766aa;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .progress-count {
+      font-size: 13px;
+      color: #9988bb;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background: #1e1a2e;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #7c3aed, #818cf8);
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+
+    .question-card {
+      background: linear-gradient(135deg, #12102044, #1a1630aa);
+      border: 1px solid #2d2050;
+      border-radius: 24px;
+      padding: 32px 28px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 40px #00000066;
+      animation: slideIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(30px) scale(0.97); }
+      to { opacity: 1; transform: translateX(0) scale(1); }
+    }
+    @keyframes slideOut {
+      from { opacity: 1; transform: translateX(0); }
+      to { opacity: 0; transform: translateX(-30px); }
+    }
+
+    .q-emoji {
+      font-size: 40px;
+      margin-bottom: 16px;
+      display: block;
+    }
+    .q-num {
+      font-size: 11px;
+      font-weight: 700;
+      color: #7c3aed;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .q-text {
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.5;
+      margin-bottom: 24px;
+      color: #ede8ff;
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .option-btn {
+      background: #1a1630;
+      border: 1.5px solid #2d2050;
+      border-radius: 14px;
+      padding: 14px 18px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 15px;
+      color: #ccc0ee;
+      font-family: inherit;
+    }
+    .option-btn:hover {
+      background: #241e3a;
+      border-color: #7c3aed;
+      transform: translateX(4px);
+      color: #ede8ff;
+    }
+    .option-btn:active {
+      transform: scale(0.98);
+    }
+    .option-btn.selected {
+      background: linear-gradient(135deg, #3d1a6e, #1e1a5e);
+      border-color: #7c3aed;
+      color: white;
+    }
+    .option-icon {
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    /* 결과 화면 */
+    .result {
+      display: none;
+      text-align: center;
+    }
+    .result.active { display: block; }
+
+    .result-card {
+      background: linear-gradient(135deg, #12102044, #1a1630aa);
+      border: 1px solid #2d2050;
+      border-radius: 24px;
+      padding: 40px 28px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 40px #00000066;
+      animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.8); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .result-emoji {
+      font-size: 80px;
+      display: block;
+      margin-bottom: 20px;
+      animation: bigBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
+    }
+    @keyframes bigBounce {
+      from { transform: scale(0); }
+      to { transform: scale(1); }
+    }
+
+    .result-badge {
+      display: inline-block;
+      padding: 6px 20px;
+      border-radius: 50px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+    }
+
+    .result-title {
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1.4;
+      margin-bottom: 12px;
+    }
+
+    .result-sub {
+      font-size: 14px;
+      color: #9988bb;
+      margin-bottom: 20px;
+      line-height: 1.7;
+    }
+
+    .score-display {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #1a1630;
+      border: 1px solid #2d2050;
+      border-radius: 50px;
+      padding: 10px 24px;
+      margin-bottom: 28px;
+      font-size: 15px;
+      color: #9988bb;
+    }
+    .score-display strong {
+      font-size: 22px;
+      font-weight: 800;
+      color: #c8a8ff;
+    }
+
+    .detail-boxes {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    .detail-box {
+      background: #1a1630;
+      border: 1px solid #2d2050;
+      border-radius: 14px;
+      padding: 14px 12px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .detail-box .d-label {
+      font-size: 11px;
+      color: #665588;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+    .detail-box .d-val {
+      color: #ccc0ee;
+      font-weight: 600;
+    }
+
+    .advice {
+      background: linear-gradient(135deg, #1e1040, #101a40);
+      border: 1px solid #3d2070;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 28px;
+      text-align: left;
+    }
+    .advice-title {
+      font-size: 12px;
+      color: #7c3aed;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    .advice-text {
+      font-size: 14px;
+      color: #ccc0ee;
+      line-height: 1.8;
+    }
+
+    .action-btns {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .retry-btn {
+      background: linear-gradient(135deg, #7c3aed, #4f46e5);
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .retry-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px #7c3aed66;
+    }
+    .share-btn {
+      background: #1a1630;
+      color: #ccc0ee;
+      border: 1.5px solid #2d2050;
+      padding: 14px;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .share-btn:hover {
+      border-color: #7c3aed;
+      color: #ede8ff;
+    }
+
+    /* 토스트 */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #241e3a;
+      border: 1px solid #3d2070;
+      color: #ccc0ee;
+      padding: 12px 24px;
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: 600;
+      z-index: 999;
+      transition: transform 0.3s;
+      pointer-events: none;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* 결과별 색상 */
+    .grade-perfect .result-badge { background: #14403a; color: #34d399; }
+    .grade-perfect .result-title { color: #34d399; }
+    .grade-hmm .result-badge { background: #3a3014; color: #fbbf24; }
+    .grade-hmm .result-title { color: #fbbf24; }
+    .grade-regret .result-badge { background: #3a2014; color: #fb923c; }
+    .grade-regret .result-title { color: #fb923c; }
+    .grade-fail .result-badge { background: #3a1420; color: #f87171; }
+    .grade-fail .result-title { color: #f87171; }
+    .grade-erase .result-badge { background: #2a1438; color: #c084fc; }
+    .grade-erase .result-title { color: #c084fc; }
+  </style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<div class="container">
+
+  <!-- 인트로 -->
+  <div class="intro" id="intro">
+    <span class="moon">🌙</span>
+    <h1>오늘 내가 한 선택들,<br>후회할까?</h1>
+    <p>
+      오늘 하루를 되돌아봐.<br>
+      <span>14개의 질문</span>으로 오늘의 선택들을 판정해줄게.<br>
+      솔직하게 답해야 정확해.
+    </p>
+    <button class="start-btn" onclick="startQuiz()">시작하기 →</button>
+  </div>
+
+  <!-- 퀴즈 -->
+  <div class="quiz" id="quiz">
+    <div class="progress-wrap">
+      <div class="progress-info">
+        <span class="progress-label">오늘의 선택 판정</span>
+        <span class="progress-count" id="progress-count">1 / 14</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+      </div>
+    </div>
+    <div class="question-card" id="question-card">
+      <!-- 동적으로 채워짐 -->
+    </div>
+  </div>
+
+  <!-- 결과 -->
+  <div class="result" id="result">
+    <div class="result-card" id="result-card">
+      <!-- 동적으로 채워짐 -->
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">링크가 복사됐어! 🔗</div>
+
+<script>
+  // 별 생성
+  const starsEl = document.getElementById('stars');
+  for (let i = 0; i < 80; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 2.5 + 0.5;
+    s.style.cssText = `
+      width: ${size}px; height: ${size}px;
+      top: ${Math.random() * 100}%;
+      left: ${Math.random() * 100}%;
+      --d: ${(Math.random() * 4 + 2).toFixed(1)}s;
+      --o: ${(Math.random() * 0.5 + 0.3).toFixed(2)};
+      animation-delay: ${(Math.random() * 5).toFixed(1)}s;
+    `;
+    starsEl.appendChild(s);
+  }
+
+  const questions = [
+    {
+      emoji: '🍔',
+      text: '오늘 야식이나 배달 두 번 이상 시켰어?',
+      options: [
+        { icon: '🥗', text: '아니, 건강하게 먹었어', score: 0 },
+        { icon: '🍕', text: '한 번은 시켰어', score: 0 },
+        { icon: '🍔', text: '두 번 이상 시켰어...', score: 1 },
+      ]
+    },
+    {
+      emoji: '💸',
+      text: '오늘 예상보다 돈을 많이 썼어?',
+      options: [
+        { icon: '✅', text: '계획대로 썼어', score: 0 },
+        { icon: '😬', text: '조금 더 썼어...', score: 1 },
+      ]
+    },
+    {
+      emoji: '📋',
+      text: '오늘 해야 할 거 미뤘어?',
+      options: [
+        { icon: '💪', text: '다 처리했어!', score: 0 },
+        { icon: '🙈', text: '미뤘어... 내일의 나야 부탁해', score: 1 },
+      ]
+    },
+    {
+      emoji: '💬',
+      text: '오늘 했던 말 중에 취소하고 싶은 게 있어?',
+      options: [
+        { icon: '😇', text: '없어, 완벽했어', score: 0 },
+        { icon: '😣', text: '있어... 그 말 지우고 싶어', score: 1 },
+      ]
+    },
+    {
+      emoji: '📱',
+      text: '오늘 SNS나 유튜브 쇼츠를 3시간 이상 봤어?',
+      options: [
+        { icon: '👍', text: '아니, 절제했어', score: 0 },
+        { icon: '🫠', text: '응... 시간이 증발했어', score: 1 },
+      ]
+    },
+    {
+      emoji: '😴',
+      text: '오늘 잠이 부족해서 피곤했어?',
+      options: [
+        { icon: '😊', text: '충분히 잤어', score: 0 },
+        { icon: '🥱', text: '부족했어, 졸렸어', score: 1 },
+      ]
+    },
+    {
+      emoji: '🫢',
+      text: '오늘 하지 말았어야 할 행동이 있어?',
+      options: [
+        { icon: '😎', text: '딱히 없어', score: 0 },
+        { icon: '🤦', text: '있어... 아 진짜 왜 그랬지', score: 1 },
+      ]
+    },
+    {
+      emoji: '🚪',
+      text: '오늘 잡을 수 있었던 기회를 그냥 넘겼어?',
+      options: [
+        { icon: '🙌', text: '없어, 다 잡았어', score: 0 },
+        { icon: '😔', text: '있어... 그냥 넘겼어', score: 1 },
+      ]
+    },
+    {
+      emoji: '🔥',
+      text: '오늘 감정적으로 행동한 적 있어?',
+      options: [
+        { icon: '🧘', text: '이성적으로 잘 다스렸어', score: 0 },
+        { icon: '💥', text: '감정이 앞섰어...', score: 1 },
+      ]
+    },
+    {
+      emoji: '⏰',
+      text: '오늘 시간을 낭비한 것 같아?',
+      options: [
+        { icon: '⚡', text: '알차게 보냈어', score: 0 },
+        { icon: '🕳️', text: '시간이 그냥 사라진 것 같아', score: 1 },
+      ]
+    },
+    {
+      emoji: '📞',
+      text: '오늘 연락했으면 좋았을 사람이 있는데 안 했어?',
+      options: [
+        { icon: '💌', text: '없어, 잘 연락했어', score: 0 },
+        { icon: '😶', text: '있어, 근데 그냥 넘겼어', score: 1 },
+      ]
+    },
+    {
+      emoji: '🛒',
+      text: '오늘 충동적으로 돈 쓴 거 있어?',
+      options: [
+        { icon: '💰', text: '아니, 참았어', score: 0 },
+        { icon: '🛍️', text: '응... 어쩌다 보니 결제했어', score: 1 },
+      ]
+    },
+    {
+      emoji: '🌃',
+      text: '오늘 일찍 자려고 했는데 또 늦게 잘 것 같아?',
+      options: [
+        { icon: '🌙', text: '일찍 잘 거야!', score: 0 },
+        { icon: '🦉', text: '또 새벽이 될 것 같아...', score: 1 },
+      ]
+    },
+    {
+      emoji: '🏃',
+      text: '오늘 운동하려고 했는데 결국 안 했어?',
+      options: [
+        { icon: '💪', text: '했어! / 원래 계획 없었어', score: 0 },
+        { icon: '🛋️', text: '하려고 했는데 누웠어...', score: 1 },
+      ]
+    },
+  ];
+
+  const results = [
+    {
+      grade: 'grade-perfect',
+      emoji: '✨',
+      badge: '완벽한 하루',
+      title: '오늘의 나,\n꽤 선방했는데?',
+      sub: '스스로를 한번 칭찬해줘도 될 것 같아.\n오늘 하루 꽤 잘 버텼잖아.',
+      advice: '이 상태를 내일도 유지해봐. 뭔가 좋은 루틴이 생기고 있는 것 같은데?',
+      detailA: '후회 지수', detailAV: '매우 낮음 😊',
+      detailB: '오늘의 등급', detailBV: '선방 그 자체',
+    },
+    {
+      grade: 'grade-hmm',
+      emoji: '🤔',
+      badge: '약간 찜찜함',
+      title: '음... 뭔가\n살짝 찜찜하긴 해',
+      sub: '큰 후회는 아니지만\n마음 어딘가에 걸리는 게 있는 것 같아.',
+      advice: '너무 자책하지는 마. 내일 그 찜찜한 것 하나만 해결해봐.',
+      detailA: '후회 지수', detailAV: '살짝 있음 😅',
+      detailB: '오늘의 등급', detailBV: '그럭저럭',
+    },
+    {
+      grade: 'grade-regret',
+      emoji: '😬',
+      badge: '꽤 후회됨',
+      title: '오늘... 솔직히\n꽤 후회되긴 해',
+      sub: '나쁜 하루는 아니었는데,\n되돌리고 싶은 순간들이 좀 있었지.',
+      advice: '후회를 느낀다는 건 더 나아지고 싶다는 거야.\n내일 딱 한 가지만 바꿔봐.',
+      detailA: '후회 지수', detailAV: '꽤 있음 😬',
+      detailB: '오늘의 등급', detailBV: '반성 필요',
+    },
+    {
+      grade: 'grade-fail',
+      emoji: '😭',
+      badge: '오늘 좀 망했다',
+      title: '오늘은...\n좀 망한 것 같아',
+      sub: '여러 가지가 꼬인 날이었나봐.\n그래도 살았잖아. 내일은 다를 거야.',
+      advice: '지금 이 순간 이미 반성 중이잖아.\n그게 내일을 바꾸는 시작이야.',
+      detailA: '후회 지수', detailAV: '많이 있음 😭',
+      detailB: '오늘의 등급', detailBV: '리셋 필요',
+    },
+    {
+      grade: 'grade-erase',
+      emoji: '🫥',
+      badge: '기억 지우고 싶다',
+      title: '이 하루는...\n기억에서 지우고 싶어',
+      sub: '오늘 하루가 좀 많이 힘들었구나.\n근데 그런 날도 있어. 진짜로.',
+      advice: '오늘 하루가 너한테 가르쳐준 게 있을 거야.\n자고 일어나면 진짜 새 하루야.',
+      detailA: '후회 지수', detailAV: '폭발 💀',
+      detailB: '오늘의 등급', detailBV: '메모리 삭제',
+    },
+  ];
+
+  let current = 0;
+  let scores = [];
+  let totalScore = 0;
+
+  function startQuiz() {
+    document.getElementById('intro').style.display = 'none';
+    document.getElementById('quiz').classList.add('active');
+    renderQuestion(0);
+  }
+
+  function renderQuestion(idx) {
+    const q = questions[idx];
+    const pct = (idx / questions.length) * 100;
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-count').textContent = `${idx + 1} / ${questions.length}`;
+
+    const card = document.getElementById('question-card');
+    card.innerHTML = `
+      <span class="q-emoji">${q.emoji}</span>
+      <div class="q-num">질문 ${idx + 1}</div>
+      <div class="q-text">${q.text}</div>
+      <div class="options">
+        ${q.options.map((opt, i) => `
+          <button class="option-btn" onclick="selectOption(${i}, ${opt.score})">
+            <span class="option-icon">${opt.icon}</span>
+            <span>${opt.text}</span>
+          </button>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  function selectOption(optIdx, score) {
+    // 선택 표시
+    const btns = document.querySelectorAll('.option-btn');
+    btns.forEach(b => b.style.pointerEvents = 'none');
+    btns[optIdx].classList.add('selected');
+
+    scores.push(score);
+    totalScore += score;
+
+    setTimeout(() => {
+      current++;
+      if (current < questions.length) {
+        const card = document.getElementById('question-card');
+        card.style.animation = 'slideOut 0.25s ease forwards';
+        setTimeout(() => {
+          card.style.animation = '';
+          renderQuestion(current);
+        }, 250);
+      } else {
+        showResult();
+      }
+    }, 400);
+  }
+
+  function showResult() {
+    document.getElementById('quiz').classList.remove('active');
+    document.getElementById('result').classList.add('active');
+
+    let resultIdx;
+    if (totalScore <= 2) resultIdx = 0;
+    else if (totalScore <= 4) resultIdx = 1;
+    else if (totalScore <= 8) resultIdx = 2;
+    else if (totalScore <= 11) resultIdx = 3;
+    else resultIdx = 4;
+
+    const r = results[resultIdx];
+    const card = document.getElementById('result-card');
+    card.className = 'result-card ' + r.grade;
+
+    // 후회 항목들 찾기
+    const regretItems = [];
+    scores.forEach((s, i) => {
+      if (s > 0) regretItems.push(questions[i].emoji + ' ' + questions[i].text.slice(0, 12) + '...');
+    });
+
+    card.innerHTML = `
+      <span class="result-emoji">${r.emoji}</span>
+      <div class="result-badge">${r.badge}</div>
+      <div class="result-title">${r.title.replace('\n', '<br>')}</div>
+      <div class="result-sub">${r.sub.replace('\n', '<br>')}</div>
+
+      <div class="score-display">
+        후회 점수 <strong>${totalScore}</strong> / 14
+      </div>
+
+      <div class="detail-boxes">
+        <div class="detail-box">
+          <div class="d-label">${r.detailA}</div>
+          <div class="d-val">${r.detailAV}</div>
+        </div>
+        <div class="detail-box">
+          <div class="d-label">${r.detailB}</div>
+          <div class="d-val">${r.detailBV}</div>
+        </div>
+        <div class="detail-box">
+          <div class="d-label">후회한 항목 수</div>
+          <div class="d-val">${totalScore}가지 😶</div>
+        </div>
+        <div class="detail-box">
+          <div class="d-label">내일의 가능성</div>
+          <div class="d-val">무한대 ♾️</div>
+        </div>
+      </div>
+
+      <div class="advice">
+        <div class="advice-title">🌙 오늘 밤 한마디</div>
+        <div class="advice-text">${r.advice}</div>
+      </div>
+
+      <div class="action-btns">
+        <button class="retry-btn" onclick="retry()">🔄 다시 해보기</button>
+        <button class="share-btn" onclick="share()">🔗 결과 공유하기</button>
+      </div>
+    `;
+  }
+
+  function retry() {
+    current = 0;
+    scores = [];
+    totalScore = 0;
+    document.getElementById('result').classList.remove('active');
+    document.getElementById('quiz').classList.add('active');
+    renderQuestion(0);
+  }
+
+  function share() {
+    const url = location.href;
+    navigator.clipboard.writeText(url).then(() => {
+      const toast = document.getElementById('toast');
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    });
+  }
+</script>
+</body>
+</html>
